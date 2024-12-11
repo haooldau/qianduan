@@ -71,40 +71,72 @@ const AutoUpdateCard = () => {
     try {
       const artistList = artistInput.split('、').map(name => name.trim()).filter(name => name);
       
-      // 并行调用两个爬虫
-      const [damaiResponse, showstartResponse] = await Promise.all([
-        // 大麦爬虫
-        axios.post(
-          `${API_BASE_URL.MAIN_API}/api/crawler/update`,
-          { artists: artistList },
-          { signal: controller.signal }
-        ),
-        // 秀动爬虫
-        axios.post(
-          'http://localhost:8001/crawler/update',
-          { artists: artistList },
-          { signal: controller.signal }
-        )
-      ]);
+      try {
+        // 并行调用两个爬虫
+        const [damaiResponse, showstartResponse] = await Promise.allSettled([
+          // 大麦爬虫
+          axios.post(
+            `${API_BASE_URL.CRAWLER_API}/update`,
+            { artists: artistList },
+            { signal: controller.signal }
+          ),
+          // 秀动爬虫
+          axios.post(
+            `${API_BASE_URL.SHOWSTART_API}/update`,
+            { artists: artistList },
+            { signal: controller.signal }
+          )
+        ]);
 
-      // 合并两个爬虫的结果
-      const results = {
-        success: damaiResponse.data.success && showstartResponse.data.success,
-        message: `更新完成: 大麦(${damaiResponse.data.message}), 秀动(${showstartResponse.data.message})`,
-        data: {
-          updates: [
-            ...damaiResponse.data.data.updates,
-            ...showstartResponse.data.data
-          ],
-          performances: [
-            ...damaiResponse.data.data.performances || [],
-            ...showstartResponse.data.data.performances || []
-          ]
+        // 处理爬虫响应
+        const results = {
+          success: true,
+          message: '更新完成',
+          data: {
+            updates: [],
+            performances: []
+          }
+        };
+
+        // 处理大麦爬虫结果
+        if (damaiResponse.status === 'fulfilled') {
+          results.data.updates.push(...(damaiResponse.value.data.data.updates || []));
+          results.data.performances.push(...(damaiResponse.value.data.data.performances || []));
+        } else {
+          console.error('大麦爬虫更新失败:', damaiResponse.reason);
+          results.message += ' [大麦爬虫更新失败]';
         }
-      };
 
-      setUpdateResult(results);
+        // 处理秀动爬虫结果
+        if (showstartResponse.status === 'fulfilled') {
+          results.data.updates.push(...(showstartResponse.value.data.data.updates || []));
+          results.data.performances.push(...(showstartResponse.value.data.data.performances || []));
+        } else {
+          console.error('秀动爬虫更新失败:', showstartResponse.reason);
+          results.message += ' [秀动爬虫更新失败]';
+        }
 
+        // 如果两个爬虫都失败了，则标记��体失败
+        if (damaiResponse.status === 'rejected' && showstartResponse.status === 'rejected') {
+          results.success = false;
+          results.message = '更新失败：两个爬虫服务都无法连接';
+        }
+
+        setUpdateResult(results);
+
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log('更新请求已取消');
+          return;
+        }
+        setUpdateResult({
+          success: false,
+          message: '更新失败：' + (error.response?.data?.message || error.message)
+        });
+      } finally {
+        setLoading(false);
+        setUpdateController(null);
+      }
     } catch (error) {
       if (error.name === 'AbortError') {
         console.log('更新请求已取消');
@@ -260,7 +292,7 @@ const AutoUpdateCard = () => {
         <div className="absolute left-0 top-24 w-full bg-[#1A1A1A] rounded-xl border border-gray-800 shadow-2xl z-50">
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
             <div className="flex items-center gap-4">
-              <h3 className="text-lg font-medium text-white">最近更新记录</h3>
+              <h3 className="text-lg font-medium text-white">最近��新记录</h3>
               <button
                 onClick={() => {
                   setSortBy(sortBy === 'date' ? 'artist' : 'date');
