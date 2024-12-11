@@ -1,0 +1,41 @@
+.map-container {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.province-path {
+  transition: all 0.3s ease;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.province-path:hover {
+  filter: brightness(1.2);
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 1.5;
+}
+
+.province-path.selected {
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: 2;
+  filter: brightness(1.3);
+}
+
+.province-path.artist-performance {
+  filter: brightness(1.1);
+}
+
+/* 热力图提示框 */
+.province-path title {
+  font-size: 12px;
+  fill: white;
+}
+
+/* 确保地图容器不会影响页面滚动 */
+.map-wrapper {
+  position: relative;
+  height: 600px;
+  overflow: hidden;
+} 

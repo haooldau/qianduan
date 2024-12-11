@@ -1,0 +1,47 @@
+.province-path {
+  transition: all 0.3s ease;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+}
+
+.province-path:hover {
+  filter: brightness(1.2);
+  cursor: pointer;
+}
+
+.heat-legend {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 热力图渐变效果 */
+.heat-gradient {
+  background: linear-gradient(
+    to right,
+    rgba(219, 38, 38, 0.2),
+    rgba(219, 38, 38, 1)
+  );
+}
+
+/* 选中省份的样式 */
+.province-path.selected {
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 2;
+  filter: brightness(1.3);
+}
+
+/* 热力图提示框样式 */
+.heat-tooltip {
+  position: absolute;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 1000;
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+} 
