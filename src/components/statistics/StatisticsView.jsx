@@ -47,11 +47,15 @@ const StatisticsView = () => {
 
   const processStatistics = (performances) => {
     // 统计基础数据
-    const artists = new Set(performances.map(p => p.artist));
-    const venues = new Set(performances.map(p => p.venue));
+    const artists = new Set(performances.filter(p => p.artist).map(p => p.artist));
+    const venues = new Set(performances.filter(p => p.venue).map(p => p.venue));
 
     // 按月份统计
     const byMonth = performances.reduce((acc, perf) => {
+      if (!perf.date) {
+        acc['未知'] = (acc['未知'] || 0) + 1;
+        return acc;
+      }
       const month = new Date(perf.date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' });
       acc[month] = (acc[month] || 0) + 1;
       return acc;
@@ -59,6 +63,10 @@ const StatisticsView = () => {
 
     // 按省份统计
     const byProvince = performances.reduce((acc, perf) => {
+      if (!perf.province) {
+        acc['未知'] = (acc['未知'] || 0) + 1;
+        return acc;
+      }
       const province = perf.province.replace(/省|自治区|维吾尔|回族|壮族|特别行政区|市/g, '').trim();
       acc[province] = (acc[province] || 0) + 1;
       return acc;
@@ -66,6 +74,7 @@ const StatisticsView = () => {
 
     // 艺人演出次数排名
     const artistPerformances = performances.reduce((acc, perf) => {
+      if (!perf.artist) return acc;
       acc[perf.artist] = (acc[perf.artist] || 0) + 1;
       return acc;
     }, {});
@@ -76,6 +85,7 @@ const StatisticsView = () => {
 
     // 场馆使用次数排名
     const venuePerformances = performances.reduce((acc, perf) => {
+      if (!perf.venue) return acc;
       acc[perf.venue] = (acc[perf.venue] || 0) + 1;
       return acc;
     }, {});
@@ -88,29 +98,14 @@ const StatisticsView = () => {
     const processedPerformances = performances.map(perf => {
       const processedPerf = {
         ...perf,
-        date: new Date(perf.date).toISOString(),
-        artist: perf.artist.trim(),
-        province: perf.province.replace(/省|自治区|维吾尔|回族|壮族|特别行政区|市/g, '').trim(),
-        city: perf.city?.trim(),
-        venue: perf.venue?.trim(),
-        type: perf.type?.trim()
+        date: perf.date ? new Date(perf.date).toISOString() : null,
+        artist: perf.artist?.trim() || '未知艺人',
+        province: perf.province ? perf.province.replace(/省|自治区|维吾尔|回族|壮族|特别行政区|市/g, '').trim() : '未知',
+        city: perf.city?.trim() || '未知城市',
+        venue: perf.venue?.trim() || '未知场馆',
+        type: perf.type?.trim() || '未知类型'
       };
-      console.log('Processed performance:', processedPerf);
       return processedPerf;
-    });
-
-    console.log('Processed performances:', processedPerformances); // 调试用
-
-    // 在设置状态之前打印处理后的数据
-    console.log('Setting statistics with:', {
-      totalPerformances: performances.length,
-      totalArtists: artists.size,
-      totalVenues: venues.size,
-      performancesByMonth: byMonth,
-      performancesByProvince: byProvince,
-      topArtists,
-      topVenues,
-      processedPerformances
     });
 
     setStatistics({
@@ -388,6 +383,7 @@ const StatisticsView = () => {
       
       // 打印过滤后的演出数据
       const provincePerformances = statistics.performances.filter(perf => {
+        if (!perf.province) return false;
         const perfProvince = perf.province.replace(/省|自治区|维吾尔|回族|壮族|特别行政区|市/g, '').trim();
         return perfProvince === province;
       });
@@ -397,10 +393,15 @@ const StatisticsView = () => {
     const getProvincePerformances = (province) => {
       return statistics.performances
         .filter(perf => {
+          if (!perf.province) return false;
           const perfProvince = perf.province.replace(/省|自治区|维吾尔|回族|壮族|特别行政区|市/g, '').trim();
           return perfProvince === province;
         })
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+        .sort((a, b) => {
+          if (!a.date) return 1;
+          if (!b.date) return -1;
+          return new Date(a.date) - new Date(b.date);
+        });
     };
 
     return (
@@ -534,7 +535,7 @@ const StatisticsView = () => {
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="总演出��次"
+            title="总演出次数"
             value={statistics.totalPerformances}
             icon={Calendar}
             trend={10}
