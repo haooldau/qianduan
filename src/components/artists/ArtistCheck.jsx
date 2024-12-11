@@ -185,6 +185,47 @@ const importantCities = [
 ];
 
 const ArtistCheck = () => {
+  const [selectedArtists, setSelectedArtists] = useState([]);
+  const [inputArtist, setInputArtist] = useState('');
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [cityInput, setCityInput] = useState('');
+  const [cityStats, setCityStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const mapContainer = useRef(null);
+  const mapInstance = useRef(null);
+
+  // 初始化
+  useEffect(() => {
+    const fetchMapData = async () => {
+      try {
+        // 使用本地地图数据文件
+        const response = await fetch('/data/china.json');
+        if (!response.ok) throw new Error('获取地图数据失败');
+        const mapData = await response.json();
+        
+        // 注册地图数据
+        echarts.registerMap('china', mapData);
+        
+        // 初始化地图
+        initMap();
+      } catch (error) {
+        console.error('地图数据加载失败:', error);
+        setError('地图数据加载失败');
+      }
+    };
+
+    fetchMapData();
+
+    // 清理函数
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.dispose();
+      }
+    };
+  }, []);
+
   // 添加记住设置状态
   const [rememberSettings, setRememberSettings] = useState(() => {
     return localStorage.getItem('rememberSettings') === 'true';
@@ -198,13 +239,6 @@ const ArtistCheck = () => {
     return rememberSettings ? localStorage.getItem('targetDate') || '' : '';
   });
   const [artistInput, setArtistInput] = useState('');
-  const [selectedArtists, setSelectedArtists] = useState(() => {
-    if (rememberSettings) {
-      const saved = localStorage.getItem('selectedArtists');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
   const [totalPrice, setTotalPrice] = useState(0); // 添加总报价状态
   
   // 评分标准状态
@@ -620,64 +654,66 @@ const ArtistCheck = () => {
 
   // 初始化地图
   useEffect(() => {
-    const initMap = async () => {
-      try {
-        console.log('开始初始化地图');
-        console.log('地图容器:', mapRef.current);
+    const initMap = () => {
+      if (!mapRef.current) return;
 
-        // 如果已经有实例，先销毁
-        if (mapInstance) {
-          mapInstance.dispose();
-        }
+      // 初始化地图实例
+      const chart = echarts.init(mapRef.current);
+      mapInstance.current = chart;
 
-        // 确保容器存在
-        if (!mapRef.current) {
-          console.error('地图容器不存在');
-          setMapError('地图器不存在');
-          return;
-        }
-
-        // 初始�� ECharts 实例
-        const instance = echarts.init(mapRef.current);
-        console.log('地图实例创建成功');
-        setMapInstance(instance);
-
-        // 获取地图数据
-        const response = await axios.get('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json');
-        console.log('地图数据获取成功:', response.data);
-
-        // 注册地图数据
-        echarts.registerMap('china', response.data);
-
-        // 基础地图配置
-        const option = {
-          backgroundColor: '#0A0A0A',
-          geo: {
-            map: 'china',
-            roam: true,
-            label: {
-              show: false
-            },
+      // 基础配置
+      const option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          trigger: 'item',
+          formatter: '{b}'
+        },
+        geo: {
+          map: 'china',
+          roam: true,
+          zoom: 1.2,
+          center: [105, 35],
+          scaleLimit: {
+            min: 1,
+            max: 3
+          },
+          itemStyle: {
+            areaColor: '#1a1a1a',
+            borderColor: '#333',
+            borderWidth: 1
+          },
+          emphasis: {
             itemStyle: {
-              areaColor: '#1a1a1a',
-              borderColor: '#333',
+              areaColor: '#252525',
+              borderColor: '#444',
               borderWidth: 1
-            },
-            emphasis: {
-              itemStyle: {
-                areaColor: '#252525'
-              }
+            }
+          },
+          select: {
+            itemStyle: {
+              areaColor: '#2a2a2a'
             }
           }
-        };
+        },
+        series: []
+      };
 
-        instance.setOption(option);
-        console.log('地图配置设置完成');
+      chart.setOption(option);
+      
+      // 监听地图点击事件
+      chart.on('click', (params) => {
+        if (params.componentType === 'geo') {
+          const cityName = params.name;
+          if (cityCoordinates[cityName]) {
+            selectCity(cityName);
+          }
+        }
+      });
 
-      } catch (error) {
-        console.error('地图初始化失败:', error);
-        setMapError(error.message);
-      }
+      // 自适应大小
+      window.addEventListener('resize', () => {
+        chart.resize();
+      });
     };
 
     initMap();
@@ -729,24 +765,31 @@ const ArtistCheck = () => {
   useEffect(() => {
     const fetchMapData = async () => {
       try {
-        const response = await axios.get('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json');
-        setMapData(response.data);
-        if (mapInstance) {
-          echarts.registerMap('china', response.data);
-          mapInstance.setOption({
-            geo: {
-              map: 'china'
-            }
-          });
-        }
+        // 使用本地地图数据文件
+        const response = await fetch('/data/china.json');
+        if (!response.ok) throw new Error('获取地图数据失败');
+        const mapData = await response.json();
+        
+        // 注册地图数据
+        echarts.registerMap('china', mapData);
+        
+        // 初始化地图
+        initMap();
       } catch (error) {
-        console.error('加载地图数据失败:', error);
-        setMapError('加载地图数据失败');
+        console.error('地图数据加载失败:', error);
+        setError('地图数据加载失败');
       }
     };
 
     fetchMapData();
-  }, [mapInstance]);
+
+    // 清理函数
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.dispose();
+      }
+    };
+  }, []);
 
   // 修改地图数据更新的 useEffect
   useEffect(() => {
@@ -985,7 +1028,7 @@ const ArtistCheck = () => {
                 };
               })
           },
-          // 连线动��
+          // 连线动
           {
             type: 'lines',
             coordinateSystem: 'geo',
@@ -1030,7 +1073,7 @@ const ArtistCheck = () => {
         ]
       };
 
-      mapInstance.setOption(option, {
+      mapInstance.current.setOption(option, {
         replaceMerge: ['series'],
         transition: ['all'],
         animationDurationUpdate: 1000,
@@ -1801,7 +1844,7 @@ const ArtistCheck = () => {
                   </>
                 ) : (
                   <div className="text-center py-8 text-gray-400">
-                    暂无演出数据
+                    暂无��出数据
                   </div>
                 )}
               </div>
