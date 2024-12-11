@@ -192,18 +192,24 @@ const ArtistCheck = () => {
   const [cityStats, setCityStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [rememberSettings, setRememberSettings] = useState(false);
+  const [totalPrice, setTotalPrice] = useState(0);
   
-  const mapContainer = useRef(null);
+  // 地图相关状态和引用
+  const mapRef = useRef(null);
   const mapInstance = useRef(null);
+  const [mapError, setMapError] = useState(null);
+  const [mapData, setMapData] = useState(null);
 
   // 初始化
   useEffect(() => {
     const fetchMapData = async () => {
       try {
-        // 使用本地地图数据文件
-        const response = await fetch('/data/china.json');
+        // 使用本地市级地图数据文件
+        const response = await fetch('/data/china_city.json');
         if (!response.ok) throw new Error('获取地图数据失败');
         const mapData = await response.json();
+        setMapData(mapData);
         
         // 注册地图数据
         echarts.registerMap('china', mapData);
@@ -212,7 +218,7 @@ const ArtistCheck = () => {
         initMap();
       } catch (error) {
         console.error('地图数据加载失败:', error);
-        setError('地图数据加载失败');
+        setMapError('地图数据加载失败');
       }
     };
 
@@ -227,11 +233,6 @@ const ArtistCheck = () => {
   }, []);
 
   // 添加记住设置状态
-  const [rememberSettings, setRememberSettings] = useState(() => {
-    return localStorage.getItem('rememberSettings') === 'true';
-  });
-
-  // 修改状态初始化，从 localStorage 获取保存的数据
   const [targetCity, setTargetCity] = useState(() => {
     return rememberSettings ? localStorage.getItem('targetCity') || '' : '';
   });
@@ -239,7 +240,6 @@ const ArtistCheck = () => {
     return rememberSettings ? localStorage.getItem('targetDate') || '' : '';
   });
   const [artistInput, setArtistInput] = useState('');
-  const [totalPrice, setTotalPrice] = useState(0); // 添加总报价状态
   
   // 评分标准状态
   const [criteria, setCriteria] = useState(() => {
@@ -264,12 +264,6 @@ const ArtistCheck = () => {
 
   // 显示设置面板
   const [showSettings, setShowSettings] = useState(false);
-
-  // 地图相关状态和引用
-  const mapRef = useRef(null);
-  const [mapInstance, setMapInstance] = useState(null);
-  const [mapError, setMapError] = useState(null);
-  const [mapData, setMapData] = useState(null);
 
   // 添加新的状态
   const [selectedArtistTimeline, setSelectedArtistTimeline] = useState(null);
@@ -1164,7 +1158,7 @@ const ArtistCheck = () => {
     return minScore;
   };
 
-  // 添加设置报价的函数
+  // 添加设置报���的函数
   const setArtistPrice = async (artist, price) => {
     try {
       const response = await axios.post(`${API_BASE_URL.MAIN_API}/api/art/price`, {
@@ -1251,7 +1245,7 @@ const ArtistCheck = () => {
     return '值得考虑';
   };
 
-  // 修改时间线点击处理函数
+  // ���改时间线点击处理函数
   const handleTimelineClick = async (artist) => {
     console.log('点击艺人时间线:', artist);
     
