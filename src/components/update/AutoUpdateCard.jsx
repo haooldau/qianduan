@@ -80,9 +80,10 @@ const AutoUpdateCard = () => {
             { artists: artistList },
             { 
               signal: controller.signal,
+              withCredentials: true,
               headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Origin': 'https://sparkle.hkg1.zeabur.app'
               }
             }
           ),
@@ -92,9 +93,10 @@ const AutoUpdateCard = () => {
             { artists: artistList },
             { 
               signal: controller.signal,
+              withCredentials: true,
               headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Origin': 'https://sparkle.hkg1.zeabur.app'
               }
             }
           )
@@ -474,7 +476,7 @@ const AutoUpdateCard = () => {
             </button>
           </div>
 
-          {/* 编辑��式下的添加艺人输入框 */}
+          {/* 编辑式下的添加艺人输入框 */}
           {isEditing && (
             <div className="flex gap-2 mb-2">
               <input
@@ -591,7 +593,7 @@ const AutoUpdateCard = () => {
                               </div>
                               {performance.lineup && (
                                 <div className="text-sm text-gray-400">
-                                  ���容：{performance.lineup}
+                                  阵容：{performance.lineup}
                                 </div>
                               )}
                             </div>
