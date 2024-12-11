@@ -78,13 +78,25 @@ const AutoUpdateCard = () => {
           axios.post(
             `${API_BASE_URL.CRAWLER_API}/update`,
             { artists: artistList },
-            { signal: controller.signal }
+            { 
+              signal: controller.signal,
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+              }
+            }
           ),
           // 秀动爬虫
           axios.post(
             `${API_BASE_URL.SHOWSTART_API}/update`,
             { artists: artistList },
-            { signal: controller.signal }
+            { 
+              signal: controller.signal,
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+              }
+            }
           )
         ]);
 
@@ -116,7 +128,7 @@ const AutoUpdateCard = () => {
           results.message += ' [秀动爬虫更新失败]';
         }
 
-        // 如果两个爬虫都失败了，则标记��体失败
+        // 如果两个爬虫都失败了，则标记整体失败
         if (damaiResponse.status === 'rejected' && showstartResponse.status === 'rejected') {
           results.success = false;
           results.message = '更新失败：两个爬虫服务都无法连接';
@@ -292,7 +304,7 @@ const AutoUpdateCard = () => {
         <div className="absolute left-0 top-24 w-full bg-[#1A1A1A] rounded-xl border border-gray-800 shadow-2xl z-50">
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
             <div className="flex items-center gap-4">
-              <h3 className="text-lg font-medium text-white">最近��新记录</h3>
+              <h3 className="text-lg font-medium text-white">最近更新记录</h3>
               <button
                 onClick={() => {
                   setSortBy(sortBy === 'date' ? 'artist' : 'date');
@@ -462,7 +474,7 @@ const AutoUpdateCard = () => {
             </button>
           </div>
 
-          {/* 编辑模式下的添加艺人输入框 */}
+          {/* 编辑��式下的添加艺人输入框 */}
           {isEditing && (
             <div className="flex gap-2 mb-2">
               <input
@@ -579,7 +591,7 @@ const AutoUpdateCard = () => {
                               </div>
                               {performance.lineup && (
                                 <div className="text-sm text-gray-400">
-                                  阵容：{performance.lineup}
+                                  ���容：{performance.lineup}
                                 </div>
                               )}
                             </div>
