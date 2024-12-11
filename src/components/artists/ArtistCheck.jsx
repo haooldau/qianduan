@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { Search, Calendar, MapPin, Plus, Minus, AlertCircle, Settings, X, Save } from 'lucide-react';
 import API_BASE_URL from '../../config/api';
@@ -201,6 +201,69 @@ const ArtistCheck = () => {
   const [mapError, setMapError] = useState(null);
   const [mapData, setMapData] = useState(null);
 
+  // 初始化地图函数
+  const initMap = useCallback(() => {
+    if (!mapRef.current) return;
+
+    // 初始化地图实例
+    const chart = echarts.init(mapRef.current);
+    mapInstance.current = chart;
+
+    // 基础配置
+    const option = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}'
+      },
+      geo: {
+        map: 'china',
+        roam: true,
+        zoom: 1.2,
+        center: [105, 35],
+        scaleLimit: {
+          min: 1,
+          max: 3
+        },
+        itemStyle: {
+          areaColor: '#1a1a1a',
+          borderColor: '#333',
+          borderWidth: 1
+        },
+        emphasis: {
+          itemStyle: {
+            areaColor: '#252525',
+            borderColor: '#444',
+            borderWidth: 1
+          }
+        },
+        select: {
+          itemStyle: {
+            areaColor: '#2a2a2a'
+          }
+        }
+      },
+      series: []
+    };
+
+    chart.setOption(option);
+    
+    // 监听地图点击事件
+    chart.on('click', (params) => {
+      if (params.componentType === 'geo') {
+        const cityName = params.name;
+        if (cityCoordinates[cityName]) {
+          selectCity(cityName);
+        }
+      }
+    });
+
+    // 自适应大小
+    window.addEventListener('resize', () => {
+      chart.resize();
+    });
+  }, []);
+
   // 初始化
   useEffect(() => {
     const fetchMapData = async () => {
@@ -230,7 +293,7 @@ const ArtistCheck = () => {
         mapInstance.current.dispose();
       }
     };
-  }, []);
+  }, [initMap]);
 
   // 添加记住设置状态
   const [targetCity, setTargetCity] = useState(() => {
@@ -646,81 +709,6 @@ const ArtistCheck = () => {
     }
   }, [targetCity, targetDate]);
 
-  // 初始化地图
-  useEffect(() => {
-    const initMap = () => {
-      if (!mapRef.current) return;
-
-      // 初始化地图实例
-      const chart = echarts.init(mapRef.current);
-      mapInstance.current = chart;
-
-      // 基础配置
-      const option = {
-        backgroundColor: 'transparent',
-        tooltip: {
-          trigger: 'item',
-          formatter: '{b}'
-        },
-        geo: {
-          map: 'china',
-          roam: true,
-          zoom: 1.2,
-          center: [105, 35],
-          scaleLimit: {
-            min: 1,
-            max: 3
-          },
-          itemStyle: {
-            areaColor: '#1a1a1a',
-            borderColor: '#333',
-            borderWidth: 1
-          },
-          emphasis: {
-            itemStyle: {
-              areaColor: '#252525',
-              borderColor: '#444',
-              borderWidth: 1
-            }
-          },
-          select: {
-            itemStyle: {
-              areaColor: '#2a2a2a'
-            }
-          }
-        },
-        series: []
-      };
-
-      chart.setOption(option);
-      
-      // 监听地图点击事件
-      chart.on('click', (params) => {
-        if (params.componentType === 'geo') {
-          const cityName = params.name;
-          if (cityCoordinates[cityName]) {
-            selectCity(cityName);
-          }
-        }
-      });
-
-      // 自适应大小
-      window.addEventListener('resize', () => {
-        chart.resize();
-      });
-    };
-
-    initMap();
-
-    // 清理函数
-    return () => {
-      if (mapInstance) {
-        console.log('清理地图实例');
-        mapInstance.dispose();
-      }
-    };
-  }, []);
-
   // 计算两城市之间的距离（使用球面距离公式）
   const calculateDistance = (city1, city2) => {
     const coords1 = allCities[city1];
@@ -783,7 +771,7 @@ const ArtistCheck = () => {
         mapInstance.current.dispose();
       }
     };
-  }, []);
+  }, [initMap]);
 
   // 修改地图数据更新的 useEffect
   useEffect(() => {
