@@ -80,10 +80,8 @@ const AutoUpdateCard = () => {
             { artists: artistList },
             { 
               signal: controller.signal,
-              withCredentials: true,
               headers: {
-                'Content-Type': 'application/json',
-                'Origin': 'https://sparkle.hkg1.zeabur.app'
+                'Content-Type': 'application/json'
               }
             }
           ),
@@ -93,10 +91,8 @@ const AutoUpdateCard = () => {
             { artists: artistList },
             { 
               signal: controller.signal,
-              withCredentials: true,
               headers: {
-                'Content-Type': 'application/json',
-                'Origin': 'https://sparkle.hkg1.zeabur.app'
+                'Content-Type': 'application/json'
               }
             }
           )
