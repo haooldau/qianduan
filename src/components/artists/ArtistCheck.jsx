@@ -113,7 +113,7 @@ const extractCityData = (features) => {
     '上海': [121.472644, 31.231706],
     '广州': [113.280637, 23.125178],
     '深圳': [114.085947, 22.547],
-    '��都': [104.065735, 30.659462],
+    '成都': [104.065735, 30.659462],
     '杭州': [120.153576, 30.287459],
     '武汉': [114.298572, 30.584355],
     '西安': [108.948024, 34.263161],
@@ -325,7 +325,7 @@ const ArtistCheck = () => {
   // 添加临时设置状态用于编辑
   const [tempCriteria, setTempCriteria] = useState(criteria);
 
-  // 显示设置面板
+  // 显示设���面板
   const [showSettings, setShowSettings] = useState(false);
 
   // 添加新的状态
@@ -475,7 +475,7 @@ const ArtistCheck = () => {
     
     try {
       // 修改 API 路径，使用正确的端点
-      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/performances/shows`, {
+      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/performances`, {
         params: {
           city: city,
           distance: criteria.distance2,
@@ -593,8 +593,8 @@ const ArtistCheck = () => {
   const fetchArtistData = async (artistName) => {
     try {
       console.log('正在获取艺人数据:', artistName);
-      // 修改 API 路径，确保使用正确的端点
-      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/performances/shows`, {
+      // ��改 API 路径，确保使用正确的端点
+      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/performances`, {
         params: {
           artist: encodeURIComponent(artistName),
           limit: 100,
