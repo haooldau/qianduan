@@ -18,14 +18,38 @@ const ArtistList = () => {
   const fetchArtists = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/shows/artists`);
+      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/performances`);
       if (response.data.success) {
-        const artistsData = response.data.data;
-        setArtists(artistsData);
+        // 处理数据，按艺人分组
+        const artistsMap = new Map();
+        response.data.data.forEach(performance => {
+          if (!artistsMap.has(performance.artist)) {
+            artistsMap.set(performance.artist, {
+              id: performance.artist,
+              name: performance.artist,
+              avatar: null,
+              latestPerformance: performance.date,
+              performanceType: performance.type,
+              province: performance.province,
+              city: performance.city,
+              venue: performance.venue,
+              poster: performance.poster,
+              performances: []
+            });
+          }
+          artistsMap.get(performance.artist).performances.push(performance);
+        });
+
+        // 转换为数组并按最近演出日期排序
+        const artistsArray = Array.from(artistsMap.values()).sort((a, b) => 
+          new Date(b.latestPerformance) - new Date(a.latestPerformance)
+        );
+
+        setArtists(artistsArray);
       }
-    } catch (error) {
-      console.error('获取艺人数据失败:', error);
-      setError('获取艺人数据失败');
+    } catch (err) {
+      console.error('获取数据失败:', err);
+      setError('获取数据失败，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -39,7 +63,7 @@ const ArtistList = () => {
   const handleDelete = async (performanceId) => {
     if (window.confirm('确定要删除这条演出记录吗？')) {
       try {
-        const response = await axios.delete(`${API_BASE_URL.MAIN_API}/api/shows/${performanceId}`);
+        const response = await axios.delete(`${API_BASE_URL.MAIN_API}/api/performances/${performanceId}`);
         if (response.data.success) {
           await fetchArtists();
         }
@@ -60,7 +84,7 @@ const ArtistList = () => {
   const handleUpdate = async () => {
     try {
       const response = await axios.put(
-        `${API_BASE_URL.MAIN_API}/api/shows/${editingPerformance.id}`,
+        `${API_BASE_URL.MAIN_API}/api/performances/${editingPerformance.id}`,
         editingPerformance
       );
       if (response.data.success) {

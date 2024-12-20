@@ -29,10 +29,10 @@ const StatisticsView = () => {
     const fetchStatistics = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/shows`);
+        const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/performances`);
         if (response.data.success) {
-          const shows = response.data.data;
-          processStatistics(shows);
+          const performances = response.data.data;
+          processStatistics(performances);
         }
       } catch (error) {
         console.error('获取统计数据失败:', error);

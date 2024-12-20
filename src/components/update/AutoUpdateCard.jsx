@@ -29,11 +29,6 @@ const AutoUpdateCard = () => {
   const [newArtistName, setNewArtistName] = useState('');
   const [updateController, setUpdateController] = useState(null);
   const [sortBy, setSortBy] = useState('date'); // 'date' 或 'artist'
-  const [lastUpdate, setLastUpdate] = useState('');
-  const [totalShows, setTotalShows] = useState('');
-  const [status, setStatus] = useState('');
-  const [error, setError] = useState('');
-  const [updating, setUpdating] = useState(false);
 
   // 保存常用艺人到localStorage
   useEffect(() => {
@@ -176,7 +171,7 @@ const AutoUpdateCard = () => {
     };
   }, [updateController]);
 
-  // 处理艺人选择
+  // 处理艺人选��
   const toggleArtist = (artist) => {
     setSelectedArtists(prev => {
       const isSelected = prev.find(a => a.id === artist.id);
@@ -203,7 +198,7 @@ const AutoUpdateCard = () => {
 
   const fetchRecentUpdates = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/shows`, {
+      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/performances/all-shows`, {
         params: {
           limit: 20,
           sort: 'date',
@@ -281,36 +276,6 @@ const AutoUpdateCard = () => {
       groups[artist].push(performance);
       return groups;
     }, {});
-  };
-
-  const fetchUpdateStatus = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/shows/status`);
-      if (response.data.success) {
-        setLastUpdate(response.data.lastUpdate);
-        setTotalShows(response.data.totalShows);
-        setStatus(response.data.status);
-      }
-    } catch (error) {
-      console.error('获取更新状态失败:', error);
-      setError('获取更新状态失败');
-    }
-  };
-
-  const handleUpdate = async () => {
-    try {
-      setUpdating(true);
-      const response = await axios.post(`${API_BASE_URL.MAIN_API}/api/shows/update`);
-      if (response.data.success) {
-        setStatus('更新成功');
-        fetchUpdateStatus();
-      }
-    } catch (error) {
-      console.error('更新数据失败:', error);
-      setError('更新数据失败');
-    } finally {
-      setUpdating(false);
-    }
   };
 
   return (
@@ -488,7 +453,7 @@ const AutoUpdateCard = () => {
                 onClick={() => setIsEditing(!isEditing)}
                 className="text-sm text-[#ff2d2d] hover:text-[#ff2d2d]/80"
               >
-                {isEditing ? '完成编辑' : '编辑'}
+                {isEditing ? '完成编���' : '编辑'}
               </button>
               <button
                 onClick={handleSelectAll}
@@ -603,7 +568,7 @@ const AutoUpdateCard = () => {
                           {performance.poster && (
                             <img
                               src={performance.poster}
-                              alt="演出海报"
+                              alt="演��海报"
                               className="w-20 h-20 object-cover rounded-lg"
                             />
                           )}
