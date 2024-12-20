@@ -29,8 +29,7 @@ const ArtistList = () => {
               name: performance.artist,
               avatar: null,
               latestPerformance: performance.date,
-              performanceType: performance.type,
-              province: performance.province,
+              tag: performance.tag,
               city: performance.city,
               venue: performance.venue,
               poster: performance.poster,
@@ -134,11 +133,10 @@ const ArtistList = () => {
         </div>
 
         {/* 表头 */}
-        <div className="grid grid-cols-[auto_200px_120px_120px_120px_200px_100px_80px] px-6 py-3 text-sm text-white/70 border-b border-white/5 bg-black/60 backdrop-blur-sm sticky top-0 z-10 flex-none">
+        <div className="grid grid-cols-[auto_200px_120px_120px_200px_100px_80px] px-6 py-3 text-sm text-white/70 border-b border-white/5 bg-black/60 backdrop-blur-sm sticky top-0 z-10 flex-none">
           <div>日期</div>
           <div>艺人</div>
           <div>类型</div>
-          <div>省份</div>
           <div>城市</div>
           <div>场馆</div>
           <div>海报</div>
@@ -157,7 +155,7 @@ const ArtistList = () => {
                 {artists.map((artist) => (
                   <div key={artist.id} className="border-b border-white/5 last:border-b-0">
                     {/* 艺人主信息行 */}
-                    <div className="grid grid-cols-[auto_200px_120px_120px_120px_200px_100px_80px] px-6 py-4 hover:bg-[#ff2d2d]/5 items-center text-sm transition-all duration-300">
+                    <div className="grid grid-cols-[auto_200px_120px_120px_200px_100px_80px] px-6 py-4 hover:bg-[#ff2d2d]/5 items-center text-sm transition-all duration-300">
                       <div>{new Date(artist.latestPerformance).toLocaleDateString('zh-CN')}</div>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-black/40 overflow-hidden backdrop-blur-sm">
@@ -173,18 +171,20 @@ const ArtistList = () => {
                       </div>
                       <div>
                         <span className="px-2 py-1 rounded-full bg-black/40 text-xs backdrop-blur-sm">
-                          {artist.performanceType}
+                          {artist.tag}
                         </span>
                       </div>
-                      <div>{artist.province}</div>
                       <div>{artist.city}</div>
                       <div>{artist.venue}</div>
                       <div>
                         {artist.poster ? (
                           <img 
-                            src={`${API_BASE_URL.MAIN_API}${artist.poster}`}
+                            src={artist.poster}
                             alt="演出海报"
                             className="w-10 h-10 rounded object-cover ring-1 ring-white/10"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
                           />
                         ) : (
                           <div className="w-10 h-10 rounded bg-black/40 flex items-center justify-center text-white/40 text-xs backdrop-blur-sm">
@@ -214,12 +214,12 @@ const ArtistList = () => {
                         {artist.performances.map((performance, idx) => (
                           <div 
                             key={idx}
-                            className="grid grid-cols-[auto_200px_120px_120px_120px_200px_100px_80px] px-6 py-4 text-sm text-white/80 border-t border-white/5 relative group hover:bg-[#ff2d2d]/5 transition-all duration-300"
+                            className="grid grid-cols-[auto_200px_120px_120px_200px_100px_80px] px-6 py-4 text-sm text-white/80 border-t border-white/5 relative group hover:bg-[#ff2d2d]/5 transition-all duration-300"
                             onMouseEnter={() => setSelectedPerformance(performance.id)}
                             onMouseLeave={() => setSelectedPerformance(null)}
                           >
                             {editingPerformance?.id === performance.id ? (
-                              <div className="col-span-8 bg-black/60 backdrop-blur-xl p-6 border border-white/10 rounded-lg m-2">
+                              <div className="col-span-7 bg-black/60 backdrop-blur-xl p-6 border border-white/10 rounded-lg m-2">
                                 <div className="flex justify-between items-center mb-4">
                                   <h3 className="text-lg font-medium">编辑演出信息</h3>
                                   <div className="flex gap-2">
@@ -256,27 +256,12 @@ const ArtistList = () => {
 
                                   <div className="space-y-2">
                                     <label className="text-sm text-white/60 block">类型</label>
-                                    <select
-                                      value={editingPerformance.type}
-                                      onChange={(e) => setEditingPerformance({
-                                        ...editingPerformance,
-                                        type: e.target.value
-                                      })}
-                                      className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff2d2d]/50 backdrop-blur-sm text-white appearance-none cursor-pointer transition-all duration-300"
-                                    >
-                                      <option value="演唱会">演唱会</option>
-                                      <option value="音乐节">音乐节</option>
-                                    </select>
-                                  </div>
-
-                                  <div className="space-y-2">
-                                    <label className="text-sm text-white/60 block">省份</label>
                                     <input
                                       type="text"
-                                      value={editingPerformance.province}
+                                      value={editingPerformance.tag}
                                       onChange={(e) => setEditingPerformance({
                                         ...editingPerformance,
-                                        province: e.target.value
+                                        tag: e.target.value
                                       })}
                                       className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff2d2d]/50 backdrop-blur-sm text-white transition-all duration-300"
                                     />
@@ -309,35 +294,29 @@ const ArtistList = () => {
                                   </div>
 
                                   <div className="space-y-2">
-                                    <label className="text-sm text-white/60 block">海报</label>
-                                    <div className="flex items-center gap-4">
-                                      {performance.poster ? (
-                                        <img 
-                                          src={`${API_BASE_URL.MAIN_API}${performance.poster}`}
-                                          alt="演出海报"
-                                          className="w-12 h-12 rounded-lg object-cover ring-1 ring-white/10"
-                                        />
-                                      ) : (
-                                        <div className="w-12 h-12 rounded-lg bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/40 text-xs">
-                                          无图
-                                        </div>
-                                      )}
-                                      <input
-                                        type="file"
-                                        onChange={(e) => setEditingPerformance({
-                                          ...editingPerformance,
-                                          newPoster: e.target.files?.[0]
-                                        })}
-                                        className="hidden"
-                                        id="poster-upload"
-                                      />
-                                      <label 
-                                        htmlFor="poster-upload"
-                                        className="px-4 py-2 rounded-lg bg-black/40 hover:bg-black/60 text-white/80 cursor-pointer transition-all duration-300 text-sm"
-                                      >
-                                        更换海报
-                                      </label>
-                                    </div>
+                                    <label className="text-sm text-white/60 block">票价</label>
+                                    <input
+                                      type="text"
+                                      value={editingPerformance.price}
+                                      onChange={(e) => setEditingPerformance({
+                                        ...editingPerformance,
+                                        price: e.target.value
+                                      })}
+                                      className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff2d2d]/50 backdrop-blur-sm text-white transition-all duration-300"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <label className="text-sm text-white/60 block">状态</label>
+                                    <input
+                                      type="text"
+                                      value={editingPerformance.status}
+                                      onChange={(e) => setEditingPerformance({
+                                        ...editingPerformance,
+                                        status: e.target.value
+                                      })}
+                                      className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-[#ff2d2d]/50 backdrop-blur-sm text-white transition-all duration-300"
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -345,21 +324,23 @@ const ArtistList = () => {
                               // 显示模式
                               <>
                                 <div>{new Date(performance.date).toLocaleDateString('zh-CN')}</div>
-                                <div></div>
+                                <div>{performance.name}</div>
                                 <div>
                                   <span className="px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-xs">
-                                    {performance.type}
+                                    {performance.tag}
                                   </span>
                                 </div>
-                                <div>{performance.province}</div>
                                 <div>{performance.city}</div>
                                 <div>{performance.venue}</div>
                                 <div>
                                   {performance.poster ? (
                                     <img 
-                                      src={`${API_BASE_URL.MAIN_API}${performance.poster}`}
+                                      src={performance.poster}
                                       alt="演出海报"
                                       className="w-10 h-10 rounded object-cover ring-1 ring-white/10"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                      }}
                                     />
                                   ) : (
                                     <div className="w-10 h-10 rounded bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/40 text-xs">
