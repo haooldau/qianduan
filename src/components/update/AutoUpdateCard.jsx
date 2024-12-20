@@ -76,7 +76,7 @@ const AutoUpdateCard = () => {
         const [damaiResponse, showstartResponse] = await Promise.allSettled([
           // 大麦爬虫
           axios.post(
-            `${API_BASE_URL.CRAWLER_API}/update`,
+            `${API_BASE_URL.CRAWLER_API}/crawler/update`,
             { artists: artistList },
             { 
               signal: controller.signal,
@@ -87,7 +87,7 @@ const AutoUpdateCard = () => {
           ),
           // 秀动爬虫
           axios.post(
-            `${API_BASE_URL.SHOWSTART_API}/update`,
+            `${API_BASE_URL.SHOWSTART_API}/crawler/update`,
             { artists: artistList },
             { 
               signal: controller.signal,
@@ -171,7 +171,7 @@ const AutoUpdateCard = () => {
     };
   }, [updateController]);
 
-  // 处理艺人选择
+  // 处理艺人选��
   const toggleArtist = (artist) => {
     setSelectedArtists(prev => {
       const isSelected = prev.find(a => a.id === artist.id);
@@ -453,7 +453,7 @@ const AutoUpdateCard = () => {
                 onClick={() => setIsEditing(!isEditing)}
                 className="text-sm text-[#ff2d2d] hover:text-[#ff2d2d]/80"
               >
-                {isEditing ? '完成编辑' : '编辑'}
+                {isEditing ? '完成编���' : '编辑'}
               </button>
               <button
                 onClick={handleSelectAll}
@@ -568,7 +568,7 @@ const AutoUpdateCard = () => {
                           {performance.poster && (
                             <img
                               src={performance.poster}
-                              alt="演出海报"
+                              alt="演��海报"
                               className="w-20 h-20 object-cover rounded-lg"
                             />
                           )}
