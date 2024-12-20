@@ -324,7 +324,7 @@ const ArtistList = () => {
                               // 显示模式
                               <>
                                 <div>{new Date(performance.date).toLocaleDateString('zh-CN')}</div>
-                                <div>{performance.name}</div>
+                                <div>{performance.artist}</div>
                                 <div>
                                   <span className="px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-xs">
                                     {performance.tag}
