@@ -477,7 +477,7 @@ const StatisticsView = () => {
                           {perf.venue && ` - ${perf.venue}`}
                         </span>
                       </div>
-                      {perf.tag && (
+                      {perf.name && (
                         <div className="mt-2 text-sm text-white/40">
                           演出名称：{perf.name}
                         </div>
