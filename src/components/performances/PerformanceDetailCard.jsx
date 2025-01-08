@@ -15,6 +15,13 @@ const PerformanceDetailCard = ({
     p.venue !== performance.venue
   );
 
+  // 处理海报URL的函数
+  const getPosterUrl = (posterPath) => {
+    if (!posterPath) return null;
+    if (posterPath.startsWith('http')) return posterPath;
+    return `${API_BASE_URL.MAIN_API}${posterPath}`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-black/90 rounded-2xl border border-white/10 w-full max-w-4xl max-h-[90vh] overflow-hidden">
@@ -68,11 +75,15 @@ const PerformanceDetailCard = ({
                 </div>
               </div>
               {performance.poster && (
-                <div className="w-64 h-80">
+                <div className="w-64 h-80 flex-shrink-0">
                   <img
-                    src={`${API_BASE_URL}${performance.poster}`}
-                    alt="演出海报"
+                    src={getPosterUrl(performance.poster)}
+                    alt={`${performance.artist}演出海报`}
                     className="w-full h-full object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/images/default-poster.jpg'; // 添加一个默认海报图片
+                    }}
                   />
                 </div>
               )}
@@ -103,11 +114,15 @@ const PerformanceDetailCard = ({
                       </div>
                     </div>
                     {perf.poster && (
-                      <div className="w-24 h-32">
+                      <div className="w-24 h-32 flex-shrink-0">
                         <img
-                          src={`${API_BASE_URL}${perf.poster}`}
-                          alt="演出海报"
+                          src={getPosterUrl(perf.poster)}
+                          alt={`${perf.artist}演出海报`}
                           className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/images/default-poster.jpg'; // 添加一个默认海报图片
+                          }}
                         />
                       </div>
                     )}
