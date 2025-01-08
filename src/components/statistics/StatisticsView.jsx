@@ -103,7 +103,7 @@ const StatisticsView = () => {
         province: perf.province ? perf.province.replace(/省|自治区|维吾尔|回族|壮族|特别行政区|市/g, '').trim() : '未知',
         city: perf.city?.trim() || '未知城市',
         venue: perf.venue?.trim() || '未知场馆',
-        type: perf.type?.trim() || '未知类型'
+        type: perf.tag?.trim() || '未知类型'
       };
       return processedPerf;
     });
@@ -350,7 +350,7 @@ const StatisticsView = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="text-white font-medium">
-                          {perf.type || '演出'}
+                          {perf.tag || '演出'}
                         </div>
                         <div className="text-sm text-white/40">
                           {new Date(perf.date).toLocaleDateString('zh-CN')}
@@ -477,9 +477,9 @@ const StatisticsView = () => {
                           {perf.venue && ` - ${perf.venue}`}
                         </span>
                       </div>
-                      {perf.type && (
+                      {perf.tag && (
                         <div className="mt-2 text-sm text-white/40">
-                          演出类型：{perf.type}
+                          演出名称：{perf.name}
                         </div>
                       )}
                     </motion.div>
