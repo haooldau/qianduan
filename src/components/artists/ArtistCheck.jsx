@@ -1181,10 +1181,11 @@ const ArtistCheck = () => {
       
       const artistData = {
         name: artistName,
-        score: inDatabase ? calculateScore(shows) : '未在库中',
+        // 只要有演出数据就计算分数
+        score: shows.length > 0 ? calculateScore(shows) : '未在库中',
         shows: shows,
         price: price,
-        inDatabase: inDatabase
+        inDatabase: inDatabase || shows.length > 0  // 修改数据库状态判断
       };
 
       setSelectedArtists(prev => {
