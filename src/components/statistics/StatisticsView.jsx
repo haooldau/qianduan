@@ -351,7 +351,7 @@ const StatisticsView = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="text-white font-medium">
-                          {perf.tag || '演出'}
+                          {perf.name || '演出'}
                         </div>
                         <div className="text-sm text-white/40">
                           {new Date(perf.date).toLocaleDateString('zh-CN')}
