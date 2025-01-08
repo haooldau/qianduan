@@ -103,7 +103,8 @@ const StatisticsView = () => {
         province: perf.province ? perf.province.replace(/省|自治区|维吾尔|回族|壮族|特别行政区|市/g, '').trim() : '未知',
         city: perf.city?.trim() || '未知城市',
         venue: perf.venue?.trim() || '未知场馆',
-        type: perf.tag?.trim() || '未知类型'
+        type: perf.tag?.trim() || '未知类型',
+        name: perf.name?.trim() || '未知演出'
       };
       return processedPerf;
     });
