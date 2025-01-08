@@ -131,19 +131,18 @@ const ChinaMap = ({
     }
   };
 
-  // 检查省份是否有选中艺人的演出（修改为检查全国范围）
+  // 检查省份是否有选中艺人的演出
   const hasArtistPerformance = (provinceName) => {
     if (!selectedArtist) return false;
-    // 不再限制时间范围，显示所有该艺人的演出省份
     return performanceData[provinceName]?.some(p => p.artist === selectedArtist);
   };
 
-  // 添加热力值计算函数
+  // 修改热力值计算函数
   const calculateHeatColor = (performances = []) => {
     if (!performances.length) return '#1f2938';
     
     // 计算热力值 (0-1)
-    const maxPerformances = 50; // 设定最大演出数量阈值
+    const maxPerformances = 30; // 调整最大演出数量阈值
     const heatValue = Math.min(performances.length / maxPerformances, 1);
     
     // 生成热力颜色 (从深蓝到红色的渐变)

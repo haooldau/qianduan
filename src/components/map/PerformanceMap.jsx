@@ -9,6 +9,55 @@ import PerformanceDetailCard from '../performances/PerformanceDetailCard';
 
 const CHINA_MAP_API = '/data/china.json';
 
+// 添加城市到省份的映射关系
+const cityToProvince = {
+  '北京': '北京',
+  '上海': '上海',
+  '天津': '天津',
+  '重庆': '重庆',
+  '广州': '广东',
+  '深圳': '广东',
+  '珠海': '广东',
+  '佛山': '广东',
+  '东莞': '广东',
+  '杭州': '浙江',
+  '宁波': '浙江',
+  '温州': '浙江',
+  '成都': '四川',
+  '武汉': '湖北',
+  '西安': '陕西',
+  '南京': '江苏',
+  '苏州': '江苏',
+  '无锡': '江苏',
+  '长沙': '湖南',
+  '郑州': '河南',
+  '青岛': '山东',
+  '济南': '山东',
+  '大连': '辽宁',
+  '沈阳': '辽宁',
+  '哈尔滨': '黑龙江',
+  '长春': '吉林',
+  '福州': '福建',
+  '厦门': '福建',
+  '合肥': '安徽',
+  '南昌': '江西',
+  '昆明': '云南',
+  '贵阳': '贵州',
+  '南宁': '广西',
+  '海口': '海南',
+  '石家庄': '河北',
+  '太原': '山西',
+  '呼和浩特': '内蒙古',
+  '乌鲁木齐': '新疆',
+  '拉萨': '西藏',
+  '西宁': '青海',
+  '兰州': '甘肃',
+  '银川': '宁夏',
+  '香港': '香港',
+  '澳门': '澳门',
+  '台北': '台湾'
+};
+
 const PerformanceMap = () => {
   const [mapData, setMapData] = useState(null);
   const [performanceData, setPerformanceData] = useState({});
@@ -58,21 +107,27 @@ const PerformanceMap = () => {
           // 处理数据并按省份分组
           const dataByProvince = {};
           data.data.forEach(performance => {
-            if (!performance.province) {
-              console.warn('Performance missing province:', performance);
+            if (!performance.city) {
+              console.warn('Performance missing city:', performance);
               return;
             }
             
-            const provinceName = performance.province
-              .replace(/省|自治区|维吾尔|回族|壮族|特别行政区/g, '')
-              .trim();
+            // 根据城市获取省份
+            const city = performance.city.replace(/市|区|县/g, '').trim();
+            const province = cityToProvince[city];
             
-            if (!dataByProvince[provinceName]) {
-              dataByProvince[provinceName] = [];
+            if (!province) {
+              console.warn(`Unknown city: ${city}`);
+              return;
             }
             
-            dataByProvince[provinceName].push({
+            if (!dataByProvince[province]) {
+              dataByProvince[province] = [];
+            }
+            
+            dataByProvince[province].push({
               ...performance,
+              province, // 添加省份信息
               date: performance.date ? new Date(performance.date) : null,
               created_at: performance.created_at ? new Date(performance.created_at) : null
             });
@@ -83,7 +138,7 @@ const PerformanceMap = () => {
           throw new Error('Invalid data format');
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error('获取数据失败:', error);
         setError(error.message);
       } finally {
         setLoading(false);
