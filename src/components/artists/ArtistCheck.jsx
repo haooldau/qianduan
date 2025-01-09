@@ -370,10 +370,12 @@ const ArtistCheck = () => {
         // 获取演出数据
         const shows = artist.shows || await fetchArtistData(artist.name);
         
-        // 获取报价和数据库状态
-        const { price, inDatabase } = await fetchArtistPrice(artist.name);
+        // 获取报价
+        const { price } = await fetchArtistPrice(artist.name);
         
-        // 如果艺人在数据库中，重新计算评分
+        // 修改：根据是否有演出数据来判断是否在库中
+        const inDatabase = shows.length > 0;
+        // 修改：只要有演出数据就计算分数，否则显示未在库中
         const score = inDatabase ? calculateScore(shows) : '未在库中';
         
         return {
@@ -1177,15 +1179,16 @@ const ArtistCheck = () => {
     try {
       const artistName = artistInput.trim();
       const shows = await fetchArtistData(artistName);
-      const { price, inDatabase } = await fetchArtistPrice(artistName);
+      const { price } = await fetchArtistPrice(artistName);
       
       const artistData = {
         name: artistName,
-        // 只要有演出数据就计算分数
+        // 修改：根据是否有演出数据来判断是否在库中
+        inDatabase: shows.length > 0,
+        // 修改：只要有演出数据就计算分数，否则显示未在库中
         score: shows.length > 0 ? calculateScore(shows) : '未在库中',
         shows: shows,
-        price: price,
-        inDatabase: inDatabase || shows.length > 0  // 修改数据库状态判断
+        price: price
       };
 
       setSelectedArtists(prev => {
