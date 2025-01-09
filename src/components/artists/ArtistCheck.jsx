@@ -594,11 +594,12 @@ const ArtistCheck = () => {
   // 修改获取艺人数据的函数
   const fetchArtistData = async (artistName) => {
     try {
-      console.log('正在获取艺人数据:', artistName);
-      // ��改 API 路径，确保使用正确的端点
+      const trimmedName = artistName.trim();
+      console.log('正在获取艺人数据:', trimmedName);
+      
       const response = await axios.get(`${API_BASE_URL.MAIN_API}/api/performances`, {
         params: {
-          artist: encodeURIComponent(artistName),
+          artist: trimmedName,
           limit: 100,
           sort: 'date',
           order: 'DESC'
