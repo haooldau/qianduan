@@ -4,8 +4,35 @@ import { Search, Calendar, MapPin, Plus, Minus, AlertCircle, Settings, X, Save }
 import API_BASE_URL from '../../config/api';
 import * as echarts from 'echarts';
 import CityPerformanceStats from '../statistics/CityPerformanceStats';
-// 导入 xlsx
 import * as XLSX from 'xlsx';
+
+// 添加自定义滚动条样式
+const scrollbarStyles = `
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #444;
+  }
+`;
+
+// 添加样式到 head
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = scrollbarStyles;
+  document.head.appendChild(style);
+}
 
 // 重要城市坐标数据
 const cityCoordinates = {
@@ -192,7 +219,10 @@ const ArtistCheck = () => {
   const [cityStats, setCityStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [rememberSettings, setRememberSettings] = useState(false);
+  const [rememberSettings, setRememberSettings] = useState(() => {
+    const saved = localStorage.getItem('rememberSettings');
+    return saved === 'true';
+  });
   const [totalPrice, setTotalPrice] = useState(0);
   
   // 地图相关状态和引用
@@ -297,35 +327,47 @@ const ArtistCheck = () => {
 
   // 添加记住设置状态
   const [targetCity, setTargetCity] = useState(() => {
-    return rememberSettings ? localStorage.getItem('targetCity') || '' : '';
+    const saved = localStorage.getItem('targetCity');
+    return saved && localStorage.getItem('rememberSettings') === 'true' ? saved : '';
   });
   const [targetDate, setTargetDate] = useState(() => {
-    return rememberSettings ? localStorage.getItem('targetDate') || '' : '';
+    const saved = localStorage.getItem('targetDate');
+    return saved && localStorage.getItem('rememberSettings') === 'true' ? saved : '';
   });
   const [artistInput, setArtistInput] = useState('');
   
   // 评分标准状态
   const [criteria, setCriteria] = useState(() => {
     const saved = localStorage.getItem('criteria');
-    return saved ? JSON.parse(saved) : {
-      distance1: 300,  // 第一个距离阈值（公里）
-      distance2: 600,  // 第二个距离阈值（公里）
-      time1: 3,       // 第一个时间阈值（月）
-      time2: 6,       // 第二个时间阈值（月）
-      time3: 12,      // 第三个时间阈值（月）
-      timeRange: 6,   // 演出显示时间范围（月），默认改为6个月
+    const defaultCriteria = {
+      distance1: 300,
+      distance2: 600,
+      time1: 3,
+      time2: 6,
+      time3: 12,
+      timeRange: 6,
       scores: {
         d1t1: 0, d1t2: 1, d1t3: 2, d1t4: 3,
         d2t1: 1, d2t2: 2, d2t3: 3, d2t4: 4,
         d3t1: 2, d3t2: 3, d3t3: 4, d3t4: 5
       }
     };
+    
+    if (saved && localStorage.getItem('rememberSettings') === 'true') {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('解析保存的评分标准失败:', e);
+        return defaultCriteria;
+      }
+    }
+    return defaultCriteria;
   });
 
   // 添加临时设置状态用于编辑
   const [tempCriteria, setTempCriteria] = useState(criteria);
 
-  // 显示设���面板
+  // 显示设面板
   const [showSettings, setShowSettings] = useState(false);
 
   // 添加新的状态
@@ -365,54 +407,64 @@ const ArtistCheck = () => {
       return setSelectedArtists(artists);
     }
 
-    const updatedArtists = await Promise.all(artists.map(async (artist) => {
-      try {
-        // 获取演出数据
-        const shows = artist.shows || await fetchArtistData(artist.name);
-        
-        // 获取报价
-        const { price } = await fetchArtistPrice(artist.name);
-        
-        // 修改：根据是否有演出数据来判断是否在库中
-        const inDatabase = shows.length > 0;
-        // 修改：只要有演出数据就计算分数，否则显示未在库中
-        const score = inDatabase ? calculateScore(shows) : '未在库中';
-        
-        return {
-          ...artist,
-          shows,
-          price: price || artist.price, // 保留原有报价，如果获取失败
-          inDatabase,
-          score
-        };
-      } catch (error) {
-        console.error(`恢复艺人 ${artist.name} 数据失败:`, error);
-        return artist;
-      }
-    }));
+    try {
+      const updatedArtists = await Promise.all(artists.map(async (artist) => {
+        try {
+          // 获取演出数据
+          const shows = artist.shows || await fetchArtistData(artist.name);
+          
+          // 获取报价
+          const { price, inDatabase } = await fetchArtistPrice(artist.name);
+          
+          // 计算分数
+          const score = shows.length > 0 ? calculateScore(shows) : '未在库中';
+          
+          return {
+            ...artist,
+            shows,
+            price: price || artist.price,
+            inDatabase: shows.length > 0 || inDatabase,
+            score
+          };
+        } catch (error) {
+          console.error(`恢复艺人 ${artist.name} 数据失败:`, error);
+          return artist;
+        }
+      }));
 
-    setSelectedArtists(updatedArtists);
-    
-    // 更新总报价
-    const total = updatedArtists.reduce((sum, artist) => {
-      const priceNum = parseInt(artist.price);
-      return sum + (isNaN(priceNum) ? 0 : priceNum);
-    }, 0);
-    setTotalPrice(total);
+      setSelectedArtists(updatedArtists);
+      
+      // 更新总报价
+      const total = updatedArtists.reduce((sum, artist) => {
+        const priceNum = parseInt(artist.price);
+        return sum + (isNaN(priceNum) ? 0 : priceNum);
+      }, 0);
+      setTotalPrice(total);
+    } catch (error) {
+      console.error('恢复艺人数据失败:', error);
+    }
   };
 
   // 添加数据恢复的 useEffect
   useEffect(() => {
-    if (rememberSettings) {
-      const saved = localStorage.getItem('selectedArtists');
-      if (saved) {
-        const savedArtists = JSON.parse(saved);
-        if (savedArtists.length > 0) {
-          restoreArtistData(savedArtists);
+    const initializeData = async () => {
+      if (rememberSettings) {
+        const savedArtists = localStorage.getItem('selectedArtists');
+        if (savedArtists) {
+          try {
+            const parsedArtists = JSON.parse(savedArtists);
+            if (Array.isArray(parsedArtists) && parsedArtists.length > 0) {
+              await restoreArtistData(parsedArtists);
+            }
+          } catch (error) {
+            console.error('解析保存的艺人数据失败:', error);
+          }
         }
       }
-    }
-  }, [rememberSettings]); // 只在 rememberSettings 改变时执行
+    };
+
+    initializeData();
+  }, [rememberSettings, targetCity, targetDate]); // 依赖项包含 targetCity 和 targetDate
 
   // 修改获取城市数据的 useEffect
   useEffect(() => {
@@ -671,13 +723,23 @@ const ArtistCheck = () => {
   // 监听记住设置的变化
   useEffect(() => {
     localStorage.setItem('rememberSettings', rememberSettings);
-    if (!rememberSettings) {
+    
+    if (rememberSettings) {
+      // 如果开启记住设置，保存当前状态
+      localStorage.setItem('targetCity', targetCity || '');
+      localStorage.setItem('targetDate', targetDate || '');
+      localStorage.setItem('criteria', JSON.stringify(criteria));
+      if (selectedArtists.length > 0) {
+        localStorage.setItem('selectedArtists', JSON.stringify(selectedArtists));
+      }
+    } else {
       // 如果关闭记住设置，清除所有保存的数据
       localStorage.removeItem('targetCity');
       localStorage.removeItem('targetDate');
       localStorage.removeItem('selectedArtists');
+      localStorage.removeItem('criteria');
     }
-  }, [rememberSettings]);
+  }, [rememberSettings, targetCity, targetDate, selectedArtists, criteria]);
 
   // 保存数据到 localStorage
   useEffect(() => {
@@ -1149,7 +1211,7 @@ const ArtistCheck = () => {
     return minScore;
   };
 
-  // 添加设置报���的函数
+  // 添加设置报的函数
   const setArtistPrice = async (artist, price) => {
     try {
       const response = await axios.post(`${API_BASE_URL.MAIN_API}/api/art/price`, {
@@ -1238,7 +1300,7 @@ const ArtistCheck = () => {
     return '值得考虑';
   };
 
-  // ���改时间线点击处理函数
+  // 改时间线点击处理函数
   const handleTimelineClick = async (artist) => {
     console.log('点击艺人时间线:', artist);
     
@@ -1255,13 +1317,31 @@ const ArtistCheck = () => {
 
   // 保存设置
   const saveCriteria = () => {
+    // 保存评分标准
     setCriteria(tempCriteria);
     localStorage.setItem('criteria', JSON.stringify(tempCriteria));
-    // 立即重新计算所有艺人的评分
+
+    // 如果开启了记住设置，保存当前的城市和日期
+    if (rememberSettings) {
+      localStorage.setItem('targetCity', targetCity || '');
+      localStorage.setItem('targetDate', targetDate || '');
+      localStorage.setItem('selectedArtists', JSON.stringify(selectedArtists));
+    } else {
+      // 如果关闭了记住设置，清除保存的数据
+      localStorage.removeItem('targetCity');
+      localStorage.removeItem('targetDate');
+      localStorage.removeItem('selectedArtists');
+    }
+    
+    // 保存记住设置的状态
+    localStorage.setItem('rememberSettings', rememberSettings);
+
+    // 重新计算所有艺人的评分
     setSelectedArtists(prev => prev.map(artist => ({
       ...artist,
       score: artist.inDatabase ? calculateScore(artist.shows) : '未在库中'
     })));
+
     setShowSettings(false);
   };
 
@@ -1315,7 +1395,7 @@ const ArtistCheck = () => {
     // 创建工作表
     const ws = XLSX.utils.aoa_to_sheet(data);
 
-    // 设���单元格样式
+    // 设单元格样式
     const range = XLSX.utils.decode_range(ws['!ref']);
     
     // 设置列宽
@@ -1538,55 +1618,57 @@ const ArtistCheck = () => {
             {/* 评分详情 */}
             <div className="bg-[#111111] rounded-xl p-6 border border-gray-800">
               <h3 className="text-lg font-medium mb-4">评分详情</h3>
-              {selectedArtists.map((artist) => (
-                <div
-                  key={artist.name}
-                  className="mb-6 p-4 bg-black rounded-lg border border-gray-800"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="text-lg font-medium">{artist.name}</h4>
-                      <div className={`text-sm ${artist.inDatabase ? getScoreColor(artist.score) : 'text-gray-500'} mt-1`}>
-                        {artist.inDatabase ? `评分: ${artist.score} - ${getScoreDescription(artist.score)}` : '未在库中'}
+              <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
+                {selectedArtists.map((artist) => (
+                  <div
+                    key={artist.name}
+                    className="mb-6 p-4 bg-black rounded-lg border border-gray-800"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-lg font-medium">{artist.name}</h4>
+                        <div className={`text-sm ${artist.inDatabase ? getScoreColor(artist.score) : 'text-gray-500'} mt-1`}>
+                          {artist.inDatabase ? `评分: ${artist.score} - ${getScoreDescription(artist.score)}` : '未在库中'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* 演出史 */}
-                  <div className="space-y-2">
-                    {artist.shows.map((show) => (
-                      <div
-                        key={show.id}
-                        className="flex items-center justify-between text-sm p-2 bg-[#111111] rounded-lg"
-                      >
-                        <div className="flex items-center gap-4">
-                          <span className="text-gray-400">
-                            {new Date(show.date).toLocaleDateString()}
-                          </span>
-                          <span>{show.city}</span>
-                          <span className="text-gray-400">{show.venue}</span>
+                    
+                    {/* 演出史 */}
+                    <div className="space-y-2">
+                      {artist.shows.map((show) => (
+                        <div
+                          key={show.id}
+                          className="flex items-center justify-between text-sm p-2 bg-[#111111] rounded-lg"
+                        >
+                          <div className="flex items-center gap-4">
+                            <span className="text-gray-400">
+                              {new Date(show.date).toLocaleDateString()}
+                            </span>
+                            <span>{show.city}</span>
+                            <span className="text-gray-400">{show.venue}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="text-gray-400">{show.type}</span>
+                            <span className="text-gray-400">
+                              距离: {Math.round(calculateDistance(targetCity, show.city))}km
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-gray-400">{show.type}</span>
-                          <span className="text-gray-400">
-                            距离: {Math.round(calculateDistance(targetCity, show.city))}km
-                          </span>
+                      ))}
+                      {artist.shows.length === 0 && (
+                        <div className="text-center text-gray-500 py-4">
+                          暂无演出记录
                         </div>
-                      </div>
-                    ))}
-                    {artist.shows.length === 0 && (
-                      <div className="text-center text-gray-500 py-4">
-                        暂无演出记录
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {selectedArtists.length === 0 && (
-                <div className="text-center text-gray-500 py-8">
-                  请加艺人查看评分详情
-                </div>
-              )}
+                ))}
+                {selectedArtists.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">
+                    请加艺人查看评分详情
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1831,7 +1913,7 @@ const ArtistCheck = () => {
                   </>
                 ) : (
                   <div className="text-center py-8 text-gray-400">
-                    暂无��出数据
+                    暂无演出数据
                   </div>
                 )}
               </div>
