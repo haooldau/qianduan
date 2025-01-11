@@ -1,16 +1,20 @@
-const API_BASE_URL = {
-  MAIN_API: process.env.REACT_APP_BACKEND_API_URL || "https://art-back.hkg1.zeabur.app/api",     // 主后端API
-  CRAWLER_API: process.env.REACT_APP_DAMAI_API_URL || "https://pa-m.zeabur.app",    // 大麦爬虫API
-  SHOWSTART_API: process.env.REACT_APP_SHOWSTART_API_URL || "https://art-ss.hkg1.zeabur.app"    // 秀动爬虫API
-};
+// API基础URL配置
+const BASE_URL = "https://art-back.hkg1.zeabur.app";
 
-// 认证相关的API端点
+// API端点
 export const AUTH_ENDPOINTS = {
-  LOGIN: `${API_BASE_URL.MAIN_API}/auth/login`,
-  REGISTER: `${API_BASE_URL.MAIN_API}/auth/register`
+  LOGIN: `${BASE_URL}/api/auth/login`,
+  REGISTER: `${BASE_URL}/api/auth/register`
 };
 
 // 文件上传
-export const UPLOAD_URL = `${API_BASE_URL.MAIN_API}/upload`;
+export const UPLOAD_URL = `${BASE_URL}/api/upload`;
 
-export default API_BASE_URL;
+// 其他API配置
+export const API_CONFIG = {
+  MAIN_API: `${BASE_URL}/api`,
+  CRAWLER_API: "https://pa-m.zeabur.app",
+  SHOWSTART_API: "https://art-ss.hkg1.zeabur.app"
+};
+
+export default API_CONFIG;
