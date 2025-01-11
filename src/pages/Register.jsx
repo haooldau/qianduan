@@ -6,58 +6,38 @@ import axios from 'axios';
 import { AUTH_ENDPOINTS, UPLOAD_URL } from '../config/api';
 
 const Register = () => {
-  const [loading, setLoading] = useState(false);
-  const [avatar, setAvatar] = useState(null);
+  const [form] = Form.useForm();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const onFinish = async (values) => {
-    if (values.password !== values.confirmPassword) {
-      message.error('两次输入的密码不一致');
-      return;
-    }
-
-    setLoading(true);
     try {
-      // 如果有头像，先上传头像
-      let avatarUrl = '';
-      if (avatar) {
-        const formData = new FormData();
-        formData.append('file', avatar);
-        const uploadRes = await axios.post(UPLOAD_URL, formData);
-        avatarUrl = uploadRes.data.url;
-      }
-
-      // 注册用户
-      const response = await axios.post(AUTH_ENDPOINTS.REGISTER, {
-        username: values.username,
-        password: values.password,
-        realName: values.realName,
-        avatar: avatarUrl,
-        slogan: values.slogan || ''
+      setLoading(true);
+      
+      // 发送注册请求
+      const response = await axios.post(AUTH_ENDPOINTS.REGISTER, values, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
-      message.success('注册成功');
-      navigate('/login');
+      if (response.data.message === '注册成功') {
+        message.success('注册成功！');
+        navigate('/login');
+      }
     } catch (error) {
-      message.error(error.response?.data?.message || '注册失败');
+      console.error('注册失败:', error);
+      message.error(error.response?.data?.message || '注册失败，请重试');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAvatarChange = (info) => {
-    if (info.file.status === 'done') {
-      setAvatar(info.file.originFileObj);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card className="w-96 shadow-lg">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold">注册</h1>
-        </div>
+    <div style={{ maxWidth: 400, margin: '40px auto', padding: '0 20px' }}>
+      <Card title="注册新账号" bordered={false}>
         <Form
+          form={form}
           name="register"
           onFinish={onFinish}
           autoComplete="off"
@@ -67,81 +47,53 @@ const Register = () => {
             name="username"
             rules={[{ required: true, message: '请输入用户名' }]}
           >
-            <Input
-              prefix={<UserOutlined />}
-              placeholder="用户名"
-              size="large"
-            />
+            <Input prefix={<UserOutlined />} placeholder="用户名" />
           </Form.Item>
 
           <Form.Item
             name="realName"
             rules={[{ required: true, message: '请输入真实姓名' }]}
           >
-            <Input
-              placeholder="真实姓名"
-              size="large"
-            />
+            <Input placeholder="真实姓名" />
           </Form.Item>
 
           <Form.Item
             name="password"
             rules={[{ required: true, message: '请输入密码' }]}
           >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="密码"
-              size="large"
-            />
+            <Input.Password prefix={<LockOutlined />} placeholder="密码" />
           </Form.Item>
 
           <Form.Item
             name="confirmPassword"
-            rules={[{ required: true, message: '请确认密码' }]}
+            dependencies={['password']}
+            rules={[
+              { required: true, message: '请确认密码' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('两次输入的密码不一致'));
+                },
+              }),
+            ]}
           >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="确认密码"
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item label="头像">
-            <Upload
-              accept="image/*"
-              listType="picture"
-              maxCount={1}
-              onChange={handleAvatarChange}
-              beforeUpload={() => false}
-              showUploadList={true}
-            >
-              <Button icon={<UploadOutlined />}>上传头像</Button>
-            </Upload>
+            <Input.Password prefix={<LockOutlined />} placeholder="确认密码" />
           </Form.Item>
 
           <Form.Item name="slogan">
-            <Input.TextArea
-              placeholder="个性签名（选填）"
-              rows={3}
-            />
+            <Input.TextArea placeholder="个性签名（选填）" />
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="w-full"
-              size="large"
-              loading={loading}
-            >
+            <Button type="primary" htmlType="submit" block loading={loading}>
               注册
             </Button>
           </Form.Item>
 
-          <div className="text-center">
-            <Button type="link" onClick={() => navigate('/login')}>
-              已有账号？立即登录
-            </Button>
+          <div style={{ textAlign: 'center' }}>
+            已有账号？ <a onClick={() => navigate('/login')}>立即登录</a>
           </div>
         </Form>
       </Card>
