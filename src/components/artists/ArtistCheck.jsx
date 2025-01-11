@@ -211,8 +211,44 @@ const importantCities = [
   '香港', '澳门', '台北'
 ];
 
+// 计算两城市之间的距离（使用球面距离公式）
+const calculateDistance = (city1, city2) => {
+  if (!city1 || !city2 || !cityCoordinates[city1] || !cityCoordinates[city2]) {
+    return 0;
+  }
+
+  const coords1 = cityCoordinates[city1];
+  const coords2 = cityCoordinates[city2];
+
+  const [lon1, lat1] = coords1;
+  const [lon2, lat2] = coords2;
+  
+  const R = 6371; // 地球半径（公里）
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.round(R * c);
+};
+
 const ArtistCheck = () => {
-  const [selectedArtists, setSelectedArtists] = useState([]);
+  const [selectedArtists, setSelectedArtists] = useState(() => {
+    const saved = localStorage.getItem('selectedArtists');
+    const rememberSettings = localStorage.getItem('rememberSettings') === 'true';
+    if (saved && rememberSettings) {
+      try {
+        const parsedArtists = JSON.parse(saved);
+        return parsedArtists;
+      } catch (e) {
+        console.error('解析保存的艺人数据失败:', e);
+        return [];
+      }
+    }
+    return [];
+  });
   const [inputArtist, setInputArtist] = useState('');
   const [selectedCity, setSelectedCity] = useState(null);
   const [cityInput, setCityInput] = useState('');
@@ -402,11 +438,6 @@ const ArtistCheck = () => {
 
   // 修改数据恢复函数
   const restoreArtistData = async (artists) => {
-    if (!targetCity || !targetDate) {
-      console.log('目标城市或日期未设置，暂不恢复评分');
-      return setSelectedArtists(artists);
-    }
-
     try {
       const updatedArtists = await Promise.all(artists.map(async (artist) => {
         try {
@@ -417,14 +448,19 @@ const ArtistCheck = () => {
           const { price, inDatabase } = await fetchArtistPrice(artist.name);
           
           // 计算分数
-          const score = shows.length > 0 ? calculateScore(shows) : '未在库中';
+          let score = artist.score;
+          if (targetCity && targetDate && shows.length > 0) {
+            score = calculateScore(shows);
+          } else if (shows.length === 0) {
+            score = '未在库中';
+          }
           
           return {
             ...artist,
             shows,
             price: price || artist.price,
             inDatabase: shows.length > 0 || inDatabase,
-            score
+            score: score
           };
         } catch (error) {
           console.error(`恢复艺人 ${artist.name} 数据失败:`, error);
@@ -445,26 +481,45 @@ const ArtistCheck = () => {
     }
   };
 
-  // 添加数据恢复的 useEffect
+  // 修改保存数据的逻辑
   useEffect(() => {
-    const initializeData = async () => {
-      if (rememberSettings) {
-        const savedArtists = localStorage.getItem('selectedArtists');
-        if (savedArtists) {
-          try {
-            const parsedArtists = JSON.parse(savedArtists);
-            if (Array.isArray(parsedArtists) && parsedArtists.length > 0) {
-              await restoreArtistData(parsedArtists);
-            }
-          } catch (error) {
-            console.error('解析保存的艺人数据失败:', error);
-          }
-        }
+    if (rememberSettings && selectedArtists.length > 0) {
+      // 保存完整的艺人数据，包括评分
+      localStorage.setItem('selectedArtists', JSON.stringify(selectedArtists));
+    }
+  }, [rememberSettings, selectedArtists]);
+
+  // 添加初始化数据的 useEffect
+  useEffect(() => {
+    const initializeArtistData = async () => {
+      const rememberSettings = localStorage.getItem('rememberSettings') === 'true';
+      if (rememberSettings && selectedArtists.length > 0) {
+        await restoreArtistData(selectedArtists);
       }
     };
 
-    initializeData();
-  }, [rememberSettings, targetCity, targetDate]); // 依赖项包含 targetCity 和 targetDate
+    initializeArtistData();
+  }, []); // 仅在组件首次加载时执行
+
+  // 修改监听城市和日期变化的 useEffect
+  useEffect(() => {
+    if (targetCity && targetDate && selectedArtists.length > 0) {
+      const updateScores = async () => {
+        const updatedArtists = selectedArtists.map(artist => {
+          if (!artist.shows || artist.shows.length === 0) return artist;
+          const score = calculateScore(artist.shows);
+          return { ...artist, score };
+        });
+        setSelectedArtists(updatedArtists);
+        
+        // 如果开启了记住设置，保存更新后的数据
+        if (rememberSettings) {
+          localStorage.setItem('selectedArtists', JSON.stringify(updatedArtists));
+        }
+      };
+      updateScores();
+    }
+  }, [targetCity, targetDate, rememberSettings]);
 
   // 修改获取城市数据的 useEffect
   useEffect(() => {
@@ -740,60 +795,6 @@ const ArtistCheck = () => {
       localStorage.removeItem('criteria');
     }
   }, [rememberSettings, targetCity, targetDate, selectedArtists, criteria]);
-
-  // 保存数据到 localStorage
-  useEffect(() => {
-    if (rememberSettings) {
-      localStorage.setItem('targetCity', targetCity);
-      localStorage.setItem('targetDate', targetDate);
-      // 只保存必要的数据到 localStorage
-      const artistsToSave = selectedArtists.map(artist => ({
-        name: artist.name,
-        shows: artist.shows,
-        price: artist.price,
-        inDatabase: artist.inDatabase,
-        score: artist.score
-      }));
-      localStorage.setItem('selectedArtists', JSON.stringify(artistsToSave));
-    }
-  }, [rememberSettings, targetCity, targetDate, selectedArtists]);
-
-  // 监听日期和城市变化，更新评分
-  useEffect(() => {
-    if (targetCity && targetDate) {
-      const updateScores = async () => {
-        const updatedArtists = await Promise.all(
-          selectedArtists.map(async (artist) => {
-            const score = calculateScore(artist.shows);
-            return { ...artist, score };
-          })
-        );
-        setSelectedArtists(updatedArtists);
-      };
-      updateScores();
-    }
-  }, [targetCity, targetDate]);
-
-  // 计算两城市之间的距离（使用球面距离公式）
-  const calculateDistance = (city1, city2) => {
-    const coords1 = allCities[city1];
-    const coords2 = allCities[city2];
-    
-    if (!coords1 || !coords2) return null;
-
-    const [lon1, lat1] = coords1;
-    const [lon2, lat2] = coords2;
-    
-    const R = 6371; // 地球半径（公里）
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return Math.round(R * c);
-  };
 
   // 获取演出时间段的颜色
   const getTimeColor = (date) => {
@@ -1381,7 +1382,7 @@ const ArtistCheck = () => {
       [], // 空行
       ['目标城市', targetCity],
       ['计划时间', targetDate],
-      [], // 空���
+      [], // 空
       ['艺人', '评分', '报价'], // 表头
       ...selectedArtists.map(artist => [
         artist.name,

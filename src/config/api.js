@@ -4,4 +4,13 @@ const API_BASE_URL = {
   SHOWSTART_API: process.env.REACT_APP_SHOWSTART_API_URL || "https://art-ss.hkg1.zeabur.app"    // 秀动爬虫API
 };
 
+// 认证相关的API端点
+export const AUTH_ENDPOINTS = {
+  LOGIN: `${API_BASE_URL.MAIN_API}/auth/login`,
+  REGISTER: `${API_BASE_URL.MAIN_API}/auth/register`
+};
+
+// 文件上传
+export const UPLOAD_URL = `${API_BASE_URL.MAIN_API}/upload`;
+
 export default API_BASE_URL;
