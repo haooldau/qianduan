@@ -1,10 +1,40 @@
 import React, { useState } from 'react';
-import { Bell, Settings, Search, User, Menu } from 'lucide-react';
+import { Bell, Settings, Search, User, Menu, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Dropdown, message } from 'antd';
 
 const Navbar = ({ sidebarCollapsed, onToggleSidebar }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const navigate = useNavigate();
+  
+  // 从 localStorage 获取用户信息
+  const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+  const isLoggedIn = !!localStorage.getItem('token');
+
+  // 处理退出登录
+  const handleLogout = () => {
+    // 清除所有本地存储
+    localStorage.clear();
+    // 清除所有会话存储
+    sessionStorage.clear();
+    message.success('退出登录成功');
+    // 使用 replace 来防止返回
+    navigate('/login', { replace: true });
+  };
+
+  // 下拉菜单项
+  const dropdownItems = {
+    items: [
+      {
+        key: 'logout',
+        label: '退出登录',
+        icon: <LogOut className="w-4 h-4" />,
+        onClick: handleLogout,
+      },
+    ],
+  };
 
   return (
     <div className="h-16 border-b border-white/5 bg-black/20 backdrop-blur-lg fixed top-0 left-0 right-0 z-50">
@@ -77,11 +107,29 @@ const Navbar = ({ sidebarCollapsed, onToggleSidebar }) => {
           <button className="p-2 rounded-lg hover:bg-white/5 text-white/60 hover:text-white transition-colors">
             <Settings className="w-5 h-5" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#ff2d2d] 
-            hover:bg-[#ff2d2d]/90 text-white transition-colors">
-            <User className="w-5 h-5" />
-            <span>登录</span>
-          </button>
+          
+          {isLoggedIn ? (
+            <Dropdown menu={dropdownItems} placement="bottomRight" arrow>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/5 cursor-pointer">
+                <div className="w-8 h-8 rounded-full bg-[#ff2d2d] flex items-center justify-center overflow-hidden">
+                  {userInfo.avatar ? (
+                    <img src={userInfo.avatar} alt="avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white text-sm">{userInfo.username?.[0]?.toUpperCase()}</span>
+                  )}
+                </div>
+                <span className="text-white">{userInfo.username}</span>
+              </div>
+            </Dropdown>
+          ) : (
+            <button 
+              onClick={() => navigate('/login')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#ff2d2d] hover:bg-[#ff2d2d]/90 text-white transition-colors"
+            >
+              <User className="w-5 h-5" />
+              <span>登录</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

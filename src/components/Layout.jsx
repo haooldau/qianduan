@@ -6,8 +6,8 @@ const { Content } = AntLayout;
 
 const Layout = () => {
   return (
-    <AntLayout className="min-h-screen">
-      <Content className="p-6">
+    <AntLayout>
+      <Content>
         <Outlet />
       </Content>
     </AntLayout>
